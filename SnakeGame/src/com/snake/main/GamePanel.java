@@ -13,6 +13,8 @@ import java.awt.event.KeyEvent;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import com.snake.Utils.FontDefault;
+import com.snake.model.Food;
 import com.snake.model.Snake;
 
 public class GamePanel extends JPanel implements ActionListener {
@@ -30,7 +32,13 @@ public class GamePanel extends JPanel implements ActionListener {
     private boolean showBlinkText = true;
     private boolean paused = false;
     private long lastBlinkTime = 0;
-    private static final int BLINK_INTERVAL = 500; 
+    private static final int BLINK_INTERVAL = 500;
+    private static final Font fontDefault = new FontDefault().getDefaultFont();
+    private static final Font fontTitle = new FontDefault().getDefaultFont(40);
+    private final Food food = new Food();
+    public static final int TILE_SIZE = 20;
+    public static final int TIMERSEC = 300;
+
 
 	public GamePanel() {
 		setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -42,16 +50,16 @@ public class GamePanel extends JPanel implements ActionListener {
     	    public void keyPressed(KeyEvent e) {
     	        switch (e.getKeyCode()) {
     	            case KeyEvent.VK_UP:
-    	                snake.setDirection(0, -20);
+    	                snake.setDirection(0, -TILE_SIZE);
     	                break;
     	            case KeyEvent.VK_DOWN:
-    	                snake.setDirection(0, 20);
+    	                snake.setDirection(0, TILE_SIZE);
     	                break;
     	            case KeyEvent.VK_LEFT:
-    	                snake.setDirection(-20, 0);
+    	                snake.setDirection(-TILE_SIZE, 0);
     	                break;
     	            case KeyEvent.VK_RIGHT:
-    	                snake.setDirection(20, 0);
+    	                snake.setDirection(TILE_SIZE, 0);
     	                break;
     	            case KeyEvent.VK_ENTER:
     	                if (gameOver) {
@@ -63,12 +71,12 @@ public class GamePanel extends JPanel implements ActionListener {
     	                	paused = !paused;
     	                }
 
-    	                break;
+                    break;
     	        }
     	    }
     	});
 
-        timer = new Timer(150, this);
+        timer = new Timer(TIMERSEC, this);
         timer.start();
     }
 	
@@ -79,27 +87,33 @@ public class GamePanel extends JPanel implements ActionListener {
 	    g.setColor(Color.GREEN);
 
 	    for (Point p : snake.getBody()) {
-	    	 g.fillRect(p.x, p.y, 20, 20);
+	    	 g.fillRect(p.x, p.y, TILE_SIZE, TILE_SIZE);
 	    }
+
+        g.setColor(Color.RED);
+        Point p = food.getPosition();
+        g.fillOval(p.x, p.y, TILE_SIZE, TILE_SIZE);
+
 
 		if (gameOver) {
 			g.setColor(Color.RED);
-			g.setFont(new Font("Arial", Font.BOLD, 40));
+			g.setFont(fontTitle);
 			String textGameOver = "GAME OVER";
 		    int textWidth = g.getFontMetrics().stringWidth(textGameOver);
 		    g.drawString(textGameOver, (getWidth() - textWidth) / 2, getHeight() / 2);
 		    if (showBlinkText) {
-			    g.setFont(new Font("Arial", Font.BOLD, 20));
+			    g.setFont(fontDefault);
 			    String textPressENTER = "Pressione ENTER para reiniciar";
 			    int textWidth2 = g.getFontMetrics().stringWidth(textPressENTER);
 			    g.drawString(textPressENTER, (getWidth() - textWidth2) / 2, getHeight() / 2 + 50);
+
 		    }
 		    return;
-		 }
+        }
 		
-		if (paused && showBlinkText && !gameOver) {
+		if (paused && showBlinkText) {
 			g.setColor(Color.WHITE);
-			g.setFont(new Font("Arial", Font.BOLD, 20));
+			g.setFont(fontDefault);
 			String textPressEnter = "Pressione ENTER para continuar";
 			int textWidth2 = g.getFontMetrics().stringWidth(textPressEnter);
 		    g.drawString(textPressEnter, (getWidth() - textWidth2) / 2, getHeight() / 2);
@@ -122,8 +136,14 @@ public class GamePanel extends JPanel implements ActionListener {
 		}
 
 		if (!paused) {
-			snake.move();  
-	
+			snake.move();
+
+            Point p = food.getPosition();
+            if (snake.getHead().equals(p)){
+                snake.grow();
+                food.respawn();
+            }
+
 			if (snake.hitWall(getWidth(), getHeight())) {
 		        gameOver = true;
 		    }
